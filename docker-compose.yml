@@ -1,0 +1,41 @@
+services:
+  jenkins:
+    image: myjenkins-blueocean:2.492.3-1
+    ports:
+      - 8080:8080
+    environment:
+      - DOCKER_HOST=tcp://docker:2376
+      - DOCKER_CERT_PATH=/var/jenkins_home/docker-certs
+      - DOCKER_TLS_VERIFY=1
+      - JAVA_OPTS=-Dhudson.plugins.git.GitSCM.ALLOW_LOCAL_CHECKOUT=true
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - jenkins-docker-certs:/var/jenkins_home/docker-certs:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - docker
+    networks:
+      - jenkins-network
+
+  docker:
+    image: docker:dind
+    privileged: true
+    environment:
+      - DOCKER_TLS_CERTDIR=/certs
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - jenkins-docker-certs:/certs/client
+    networks:
+      - jenkins-network
+
+volumes:
+  jenkins_home:
+    name: jenkins_home
+    external: false
+  jenkins-docker-certs:
+    name: jenkins-docker-certs
+    external: false
+
+networks:
+  jenkins-network:
+    driver: bridge
